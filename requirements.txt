@@ -1,4 +1,4 @@
 streamlit
-requests
-spotipy
 folium
+pandas
+streamlit_folium
