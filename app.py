@@ -22,18 +22,14 @@ if df.empty:
 # ✅ Récupérer la liste des années disponibles
 years = sorted(df['year'].unique())
 
-# ✅ Initialiser `st.session_state` avec l'année la plus récente par défaut
-if "selected_year" not in st.session_state:
-    st.session_state.selected_year = max(years)  # Année la plus récente
+# ✅ Sélectionner une année avec un slider affichant une graduation
+selected_year = st.select_slider(
+    "Sélectionnez une année :",
+    options=years,
+    format_func=lambda x: str(x) if x % 1 == 0 else "",  # Affiche uniquement les graduations des années
+)
 
-# ✅ Afficher les années sous forme de boutons cliquables
-st.write("### Sélectionnez une année :")
-cols = st.columns(len(years))  # Créer une colonne par année
-
-# ✅ Ajouter un bouton pour chaque année
-for i, year in enumerate(years):
-    if cols[i].button(str(year)):  # Si un bouton est cliqué, mise à jour de l'année sélectionnée
-        st.session_state.selected_year = year
+st.session_state.selected_year = selected_year
 
 # ✅ Filtrer le DataFrame en fonction de l’année sélectionnée
 selected_year = st.session_state.selected_year
