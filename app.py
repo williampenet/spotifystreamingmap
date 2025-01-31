@@ -50,10 +50,7 @@ price_per_stream = spotify_cost / total_streams if total_streams > 0 else 0
 
 # ✅ Afficher le paragraphe dynamique
 st.markdown(f"""
-I've been using Spotify for a long time now. Since {start_year}, I have listened to **{total_streams:,}** songs on Spotify and have given the platform **{spotify_cost:.2f}€**. Cela représente donc une rémunération de 
-        <span style="background-color:#1DB954; color:white; padding:4px 8px; border-radius:5px;">
-            {price_per_stream:.6f}€
-        </span> par stream, ce qui n'est pas beaucoup.
+I've been using Spotify for a long time now. Since {start_year}, I have listened to **{total_streams:,}** songs on Spotify and have given the platform **{spotify_cost:.2f}€**. It represents about {price_per_stream:.6f}€ per stream, which is not much ! 
 """)
 
 # ✅ Sélectionner une année avec un slider interactif
@@ -71,8 +68,30 @@ if not df_filtered.empty:
 else:
     map_spotify = folium.Map(location=[df['latitude'].mean(), df['longitude'].mean()], zoom_start=5)
 
-# ✅ Afficher la carte avec Streamlit
-st_folium(map_spotify, width=1000, height=500)
+# ✅ Afficher la carte avec Streamlit et récupérer l'état de la carte
+map_data = st_folium(map_spotify, width=1000, height=500, returned_objects=["bounds"])
+
+# ✅ Récupérer les clusters visibles et afficher le titre le plus écouté pour chaque cluster
+if map_data and "bounds" in map_data:
+    bounds = map_data["bounds"]
+    min_lat, min_lon = bounds["_southWest"]["lat"], bounds["_southWest"]["lng"]
+    max_lat, max_lon = bounds["_northEast"]["lat"], bounds["_northEast"]["lng"]
+
+    # ✅ Filtrer les streams visibles sur la carte
+    df_visible = df_filtered[
+        (df_filtered["latitude"] >= min_lat) & (df_filtered["latitude"] <= max_lat) &
+        (df_filtered["longitude"] >= min_lon) & (df_filtered["longitude"] <= max_lon)
+    ]
+
+# ✅ Trouver le titre le plus écouté par cluster visible
+if not df_visible.empty:
+    top_tracks = df_visible.groupby(["artist", "track"])["track"].count().reset_index(name="count")
+    top_tracks = top_tracks.sort_values("count", ascending=False).head(3)  # Prendre les 3 titres les plus écoutés
+
+    # ✅ Afficher les résultats avec l'artiste avant le titre
+    st.write("🎵 **Top tracks visible on the map**:")
+    for i, row in top_tracks.iterrows():
+        st.write(f"🎶 **{row['artist']} - {row['track']}** - {row['count']} plays")
 
 # ✅ Calculer le nombre de streams par mois et par année
 streams_per_month = df.groupby(['year', 'month']).size().reset_index(name='count')
